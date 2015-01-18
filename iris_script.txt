@@ -1,0 +1,102 @@
+# downloading IRIS file using curl
+curl https://archive.ics.uci.edu/ml/machine-learning-databases/iris/iris.data  > iris_data.csv
+# manually creating another text file for iris names
+# the name of the file is iris_names.txt
+ls -l
+# merging the files to create final file
+cat iris_names.txt iris_data.csv > iris.csv
+###############################################################################
+## MODDULE 0: SET UP COMMANDS:
+###############################################################################
+# 
+R
+# understanding present working directory
+getwd()
+# loading datasets library
+library(datasets)
+# loading "IRIS" dataset
+data(iris)
+# writing IRIS dataset as a CSV file
+write.table(iris, "iris.csv", sep=",", row.names = FALSE , col.names = TRUE)
+#
+###############################################################################
+## MODDULE 1: Hadoop/HDFS demonstration
+###############################################################################
+# 
+head -10 iris.csv
+wc -l iris.csv
+#
+Hadoop commands:
+# use following command to remove file from hadoop
+hadoop fs -rm /user/training/iris.csv
+# loading file into hadoop
+hadoop fs -put iris.csv /user/training/iris.csv
+# reviewing if the file got loaded correctly
+hadoop fs -ls /user/training
+#
+###############################################################################
+## MODDULE 2: HIVE demonstration
+###############################################################################
+# 
+# hive command to create a table
+hive
+# drop table iris;
+# Creating table IRIS to analyze data through HIVE
+CREATE TABLE iris
+(SepalLength DOUBLE, SepalWidth DOUBLE, PetalLength DOUBLE, PetalWidth DOUBLE, Species STRING) 
+ROW FORMAT DELIMITED
+FIELDS TERMINATED BY ','
+STORED AS TEXTFILE;
+# Loading actual data from hadoop HDFS into hive..
+LOAD DATA INPATH '/user/training/iris.csv'
+INTO TABLE iris;
+# reviewing data through hive query language HQL
+select count(*) from iris;
+# reviewing data through hive query language HQL
+select * from iris limit 10;
+# exiting the system
+exit;
+# 
+###############################################################################
+## MODDULE 3 : BEESWAX demonstration:
+###############################################################################
+# connecting to Beeswax query editor
+select count(*) from iris;
+select * from iris limit 10;
+#
+###############################################################################
+## MODDULE 4 : R demonstration: part 1
+###############################################################################
+R
+# understanding present working directory
+getwd()
+# importing csv file for analysis
+iris<-read.csv("iris.csv")
+# splitting iris file as test and training file for model development and validation
+testidx <- which(1:length(iris[,1])%%5 == 0)
+iris_train <- iris[-testidx,]
+iris_test <- iris[testidx,]
+# verifying splitting results
+dim(iris_train)
+dim(iris_test)
+# reviwing file variables
+str(iris_train)
+str(iris_test)
+# Using RANDOM FOREST library for developing a random forest model
+library(randomForest)
+# running random forest model
+rf <- randomForest(formula=Species~Sepal.Length+Sepal.Width+Petal.Length+Petal.Width, 
+data=iris_train, na.action=na.roughfix, ntree=500, mtry=2, 
+do.trace=TRUE, importance=TRUE)
+###############################################################################
+## MODDULE 5 : R demonstration: part 2
+###############################################################################
+# reviewing the output..
+rf
+# Understanding variable importance
+rn <- round(importance(rf), 2)
+rn[order(rn[,3], decreasing=TRUE),]
+# predicting the test file using the model developed.
+pred<-predict(rf, iris_test)
+# reviewing prediction results and accuracy
+table(na.omit(iris_test)$Species, pred, dnn=c("Actual", "Predicted"))
