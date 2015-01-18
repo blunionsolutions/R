@@ -119,4 +119,3 @@ rn[order(rn[,3], decreasing=TRUE),]
 pred<-predict(rf, iris_test)
 # reviewing prediction results and accuracy
 table(na.omit(iris_test)$Species, pred, dnn=c("Actual", "Predicted"))
-###############################################################################
